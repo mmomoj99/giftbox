@@ -1,0 +1,157 @@
+:root{
+  --bg:#fff9f4;
+  --accent:#ff6f3c;
+  --kakao:#fee500;
+  --muted:#666;
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--bg);
+  font-family: "Noto Sans KR", Apple SD Gothic Neo, system-ui, sans-serif;
+  color:#222;
+}
+
+.wrap{
+  max-width:520px;
+  margin:12px auto;
+  padding:22px;
+  text-align:center;
+}
+
+/* Header */
+h1{
+  font-size:22px;
+  margin:8px 0 18px;
+}
+
+/* 무대(상자) */
+.stage{ display:flex; justify-content:center; align-items:center; height:260px; }
+.gift-wrap{
+  width:260px;
+  height:220px;
+  position:relative;
+  perspective:1000px;
+  margin:auto;
+  display:flex;
+  justify-content:center;
+  align-items:flex-end;
+}
+
+/* gift images */
+.gift-img{
+  position:absolute;
+  width:100%;
+  height:auto;
+  left:0;
+  top:0;
+  transition: opacity 260ms ease, transform 180ms ease;
+  display:block;
+  user-select:none;
+  pointer-events:none;
+  transform-origin: left center; /* for lid-like rotate */
+}
+
+/* closed visible initially */
+.gift-closed{ opacity:1; z-index:3; transform-origin:center center; }
+.gift-open { opacity:0; z-index:2; }
+
+/* wrapper pop + shake */
+.gift-wrap.pop { transform: translateY(-12px) scale(1.02); transition: transform 160ms ease; }
+.gift-wrap.shake { animation: boxShake 740ms ease; transform-origin:center; }
+@keyframes boxShake {
+  0%{ transform: translateY(-12px) rotate(0deg); }
+  20%{ transform: translateY(-12px) rotate(8deg); }
+  40%{ transform: translateY(-12px) rotate(-8deg); }
+  60%{ transform: translateY(-12px) rotate(6deg); }
+  80%{ transform: translateY(-12px) rotate(-6deg); }
+  100%{ transform: translateY(-12px) rotate(0deg); }
+}
+
+/* open 상태: 닫힌 이미지 사라지고 열린 이미지 보이게 */
+.gift-wrap.open .gift-closed{ opacity:0; transform:scale(0.96); }
+.gift-wrap.open .gift-open { opacity:1; transform:translateZ(0) rotateY(-2deg); }
+
+/* 보상 요소 (상자 내부에서 위로 튀어나오게) */
+.reward{
+  position:absolute;
+  left:50%;
+  bottom:36px;                 /* 상자 내부 바닥 근처 */
+  transform: translateX(-50%) translateY(28px) scale(0.88);
+  opacity:0;
+  width:74%;
+  text-align:center;
+  z-index:6;
+  pointer-events:none;
+}
+
+.reward .icon{
+  display:block;
+  font-size:40px;
+  margin-bottom:6px;
+  filter:drop-shadow(0 6px 12px rgba(0,0,0,0.12));
+}
+.reward .label{
+  font-weight:700;
+  font-size:16px;
+  color:#222;
+}
+
+/* 튀어나오는 애니메이션 */
+.reward.popUp{
+  animation: rewardUp 720ms cubic-bezier(.2,.85,.2,1) forwards;
+}
+@keyframes rewardUp {
+  0% { opacity:0; transform:translateX(-50%) translateY(28px) scale(0.8); }
+  45%{ opacity:1; transform:translateX(-50%) translateY(-14px) scale(1.12); }
+  100%{ opacity:1; transform:translateX(-50%) translateY(-90px) scale(1); }
+}
+
+/* 사용법 안내 */
+.usage-area{
+  margin-top:8px;
+  min-height:28px;
+  font-size:14px;
+  color:var(--muted);
+}
+
+/* 버튼 영역 (세로 정렬) */
+.controls{
+  margin-top:18px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  align-items:center;
+}
+
+/* 버튼 스타일 */
+.btn-primary{
+  background:#fff;
+  border:2px solid rgba(0,0,0,0.08);
+  padding:12px 22px;
+  border-radius:12px;
+  font-size:16px;
+  cursor:pointer;
+  box-shadow:0 6px 16px rgba(0,0,0,0.06);
+}
+.btn-kakao{
+  background:var(--kakao);
+  border:none;
+  padding:12px 22px;
+  border-radius:12px;
+  font-weight:700;
+  cursor:pointer;
+  box-shadow:0 6px 16px rgba(0,0,0,0.06);
+}
+
+/* 메시지 & 포인트 */
+.msg{ margin-top:12px; font-size:14px; color:#333; min-height:20px; }
+.points{ margin-top:10px; font-weight:700; color:var(--accent); }
+
+/* 반응형 */
+@media (max-width:420px){
+  .gift-wrap{ width:200px; height:170px; }
+  .reward .icon{ font-size:34px; }
+  .reward .label{ font-size:14px; }
+}
