@@ -24,9 +24,10 @@ pointsEl.textContent = `포인트: ${points}`;
 const rewards = [
     // weight가 높을수록 당첨 확률이 높습니다.
   { icon:"☕", name:"아메리카노 쿠폰", usage:"카운터에서 쿠폰 제시", weight: 25 }, // 25% 비율
-  { icon:"🍖", name:"강아지 간식", usage:"현장에서 직원에게 수령", weight: 10 },  // 10% 비율 (가장 낮은 확률)
-  { icon:"🎟️", name:"10% 할인권", usage:"결제 시 사용 가능", weight: 40 },  // 40% 비율 (가장 높은 확률)
-  { icon:"🐾", name:"무료 입장권", usage:"입장 시 제시", weight: 25 }  // 25% 비율
+  { icon:"🍖", name:"강아지 간식", usage:"현장에서 직원에게 수령", weight: 15 },  // 10% 비율 (가장 낮은 확률)
+  { icon:"🎟️", name:"떡볶이 단품 쿠폰", usage:"카운터에서 쿠폰 제시", weight: 5 },  // 40% 비율 (가장 높은 확률)
+  { icon:"⛺", name:"글램핑 2시간", usage:"사전 예약 필수 ", weight: 2 },  
+  { icon:"🐾", name:"반려견 무료 입장권", usage:"입장 시 제시", weight: 55 }  // 25% 비율
 ];
 // 이 예시에서 전체 weight 합은 25 + 10 + 40 + 25 = 100 이므로,
 // 각각 아메리카노 25%, 간식 10%, 할인권 40%, 입장권 25% 확률로 뽑힙니다.
@@ -154,3 +155,4 @@ function handlePostLogin(uid, nickname){
   // ... (생략된 기존 로그인 관련 주석 처리 코드) ...
 }
 */
+
