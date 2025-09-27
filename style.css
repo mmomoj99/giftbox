@@ -1,7 +1,6 @@
 :root{
   --bg:#fff9f4;
   --accent:#ff6f3c;
-  --kakao:#fee500;
   --muted:#666;
 }
 
@@ -77,7 +76,7 @@ h1{
 .reward{
   position:absolute;
   left:50%;
-  bottom:36px;                 /* 상자 내부 바닥 근처 */
+  bottom:36px;
   transform: translateX(-50%) translateY(28px) scale(0.88);
   opacity:0;
   width:74%;
@@ -135,19 +134,9 @@ h1{
   cursor:pointer;
   box-shadow:0 6px 16px rgba(0,0,0,0.06);
 }
-.btn-kakao{
-  background:var(--kakao);
-  border:none;
-  padding:12px 22px;
-  border-radius:12px;
-  font-weight:700;
-  cursor:pointer;
-  box-shadow:0 6px 16px rgba(0,0,0,0.06);
-}
 
-/* 메시지 & 포인트 */
+/* 메시지 */
 .msg{ margin-top:12px; font-size:14px; color:#333; min-height:20px; }
-.points{ margin-top:10px; font-weight:700; color:var(--accent); }
 
 /* 반응형 */
 @media (max-width:420px){
@@ -155,3 +144,12 @@ h1{
   .reward .icon{ font-size:34px; }
   .reward .label{ font-size:14px; }
 }
+
+/* style.css 파일의 아무 곳에나 추가 */
+.reward .coupon-code {
+  font-size: 14px; /* 쿠폰 번호 폰트 크기 */
+  font-weight: 500; /* 폰트 굵기 */
+  color: #555; /* 색상 */
+  margin-top: 8px;}
+   /* 보상명과의 간격 
+  
