@@ -19,9 +19,9 @@
     <section class="stage">
       <div class="gift-wrap" id="giftWrap">
         <!-- 닫힌 상자 이미지 (초기 표시) -->
-        <img id="giftClosed" class="gift-img gift-closed" src="images/gift_closed.png" alt="선물상자(닫힘)">
+        <img id="giftClosed" class="gift-img gift-closed" src="image/box.png" alt="선물상자(닫힘)">
         <!-- 열린 상자 이미지(초기엔 투명) -->
-        <img id="giftOpen" class="gift-img gift-open" src="images/gift_open.png" alt="선물상자(열림)">
+        <img id="giftOpen" class="gift-img gift-open" src="image/lid3.png" alt="선물상자(열림)">
         <!-- 보상 내부에서 튀어나오는 요소 (아이콘+라벨) -->
         <div id="reward" class="reward" aria-hidden="true"></div>
       </div>
@@ -33,12 +33,17 @@
     <!-- 버튼 -->
     <div class="controls">
       <button id="rewardBtn" class="btn-primary">보상 받기</button>
-      <button id="loginBtn" class="btn-kakao" style="display:none;">카카오로 로그인 (보상 적립)</button>
+      <!-- 카카오톡 로그인 주석
+    <button id="loginBtn" class="btn-kakao" style="display:none;">카카오로 로그인 (보상 적립)</button>
+     -->
+  
     </div>
 
     <div id="msg" class="msg" aria-live="polite"></div>
-    <div id="points" class="points">포인트: 0</div>
-  </main>
+ <!---- 포인트 표시
+  <div id="points" class="points">포인트: 0</div> --->
+  
+</main>
 
   <script src="script.js"></script>
 </body>
