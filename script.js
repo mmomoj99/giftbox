@@ -106,10 +106,10 @@ rewardBtn.addEventListener("click", async () => {
   const today = new Date().toISOString().split('T')[0];
   const lastParticipation = localStorage.getItem("lucky_box_last_date");
 
-  /*if (lastParticipation === today) {
+  if (lastParticipation === today) {
     msgEl.textContent = "견주님은 욕심쟁이!";
     return;
-  }*/
+  }
   
   pendingReward = pickReward();
   await playSequence();
@@ -128,3 +128,4 @@ function handlePostLogin(uid, nickname){
   // ... (생략된 기존 로그인 관련 주석 처리 코드) ...
 }
 */
+
