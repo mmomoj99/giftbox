@@ -1,158 +1,51 @@
-/* confetti 이용: canvas-confetti를 CDN으로 불러왔습니다. */
-/* 카카오 사용할 경우 Kakao.init("YOUR_JS_APP_KEY") 로 초기화하세요. */
-
-const rewardBtn = document.getElementById("rewardBtn");
-// const loginBtn  = document.getElementById("loginBtn"); // 주석 처리
-const giftWrap  = document.getElementById("giftWrap");
-const giftClosed = document.getElementById("giftClosed");
-const giftOpen = document.getElementById("giftOpen");
-const rewardEl  = document.getElementById("reward");
-const usageArea = document.getElementById("usageArea");
-const msgEl     = document.getElementById("msg");
-// const pointsEl  = document.getElementById("points"); // 주석 처리
-
-let animating = false;
-let pendingReward = null;
-/*
-// 포인트 및 로그인 관련 변수 모두 주석 처리
-let loggedIn = false;
-let points = parseInt(localStorage.getItem("lucky_points") || "0", 10);
-pointsEl.textContent = `포인트: ${points}`;
-*/
-
-/* 보상 목록 및 확률 (weight 기반) */
-const rewards = [
-    // weight가 높을수록 당첨 확률이 높습니다.
-  { icon:"☕", name:"아메리카노 쿠폰", usage:"카운터에서 쿠폰 제시", weight: 25 }, // 25% 비율
-  { icon:"🍖", name:"강아지 간식", usage:"현장에서 직원에게 수령", weight: 15 },  // 10% 비율 (가장 낮은 확률)
-  { icon:"🎟️", name:"떡볶이 단품 쿠폰", usage:"카운터에서 쿠폰 제시", weight: 5 },  // 40% 비율 (가장 높은 확률)
-  { icon:"⛺", name:"글램핑 2시간", usage:"사전 예약 필수 ", weight: 2 },  
-  { icon:"🐾", name:"반려견 무료 입장권", usage:"입장 시 제시", weight: 55 }  // 25% 비율
+/* Server drawing will replace drawPrize() later. The present version is deliberately local-only. */
+const app = document.querySelector('#app');
+const toast = document.querySelector('#toast');
+const STORE_KEY = 'jaruromung_lucky_pack_v2';
+const asset = (name) => encodeURI(name);
+const ASSETS = {
+  packSheet: asset('ChatGPT 이미지 2026년 10월 4일 오후 07_31_20-1.png'),
+  cardSheet: asset('ChatGPT 이미지 2026년 10월 4일 오후 07_31_25-2.png'),
+  sadSheet: asset('ChatGPT 이미지 2026년 10월 4일 오후 07_31_31-4.png'),
+  mbar: asset('ChatGPT 이미지 2026년 10월 4일 오후 07_34_20-1.png'),
+  drink: asset('ChatGPT 이미지 2026년 10월 4일 오후 07_34_23-2.png'),
+  pup: asset('ChatGPT 이미지 2026년 10월 4일 오후 07_34_27-3.png'),
+  tteok: asset('ChatGPT 이미지 2026년 10월 4일 오후 07_34_30-4.png'),
+  entry: asset('ChatGPT 이미지 2026년 10월 4일 오후 07_34_33-5.png'),
+};
+const prizes = [
+  { id:'miss', name:'꽝', weight:42, win:false, asset:ASSETS.sadSheet, title:'아쉽지만', subtitle:'다음 기회에 만나요!', detail:'다음에도 좋은 선물이 기다리고 있어요!\n내일 다시 도전해보세요 🐾' },
+  { id:'mbar', name:'멍바 1개', weight:25, asset:ASSETS.mbar, title:'축하합니다!', subtitle:'🐾 멍바 당첨!', detail:'사랑하는 반려견을 위한 특별한 간식!\n직원에게 이 화면을 보여주세요.\n\n※ 개별 포장된 스틱형 반려견 간식 1개 제공' },
+  { id:'drink', name:'음료 1잔', weight:15, asset:ASSETS.drink, title:'축하합니다!', subtitle:'음료 1잔 당첨!', detail:'이용 가능한 음료는\n매장 운영 기준에 따라 제공됩니다.' },
+  { id:'pup', name:'멍푸치노 1잔', weight:12, asset:ASSETS.pup, title:'축하합니다!', subtitle:'🐾 멍푸치노 당첨!', detail:'우리 아이를 위한 특별한 음료!\n직원에게 이 화면을 보여주세요.' },
+  { id:'tteok', name:'떡볶이 1인분', weight:2, asset:ASSETS.tteok, title:'축하합니다!', subtitle:'떡볶이 1인분 당첨!', detail:'직원 확인 후 이용할 수 있습니다.' },
+  { id:'entry', name:'무료 입장권', weight:4, rare:true, asset:ASSETS.entry, title:'축하합니다!', subtitle:'🎉 무료 입장권 당첨!', detail:'보호자 1인 + 반려견 1견 무료 입장권\n\n• 보호자 1인 + 반려견 1견 기준입니다.\n• 추가 보호자 및 반려견은 정상요금이 적용됩니다.\n• 당일 운영 상황에 따라 이용이 제한될 수 있습니다.\n• 직원 확인 후 사용 가능합니다.' },
 ];
-// 이 예시에서 전체 weight 합은 25 + 10 + 40 + 25 = 100 이므로,
-// 각각 아메리카노 25%, 간식 10%, 할인권 40%, 입장권 25% 확률로 뽑힙니다.
-// 합이 100이 아니어도 상대적인 가중치로 작동합니다.
-
-const TIMINGS = { pop:160, shake:740, openDelay:120, rewardPop:720 };
-
-function delay(ms){ return new Promise(res => setTimeout(res, ms)); }
-
-// === 고유 쿠폰 번호 생성 함수 추가 ===
-function generateCouponCode(length = 8) {
-  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-  let result = '';
-  for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
-}
-// ===================================
-
-/**
- * 가중치(weight)에 따라 보상을 선택하는 함수
- * @returns {Object} 선택된 보상 객체와 고유 쿠폰 번호
- */
-function pickReward(){
-    const totalWeight = rewards.reduce((sum, r) => sum + r.weight, 0);
-    let randomNum = Math.random() * totalWeight; // 0과 totalWeight 사이의 난수 생성
-    
-    let chosenReward = null;
-    
-    // 난수가 어느 weight 구간에 속하는지 확인
-    for (const reward of rewards) {
-        if (randomNum < reward.weight) {
-            chosenReward = reward;
-            break;
-        }
-        randomNum -= reward.weight;
-    }
-
-    // 안전장치 (혹시라도 선택이 안 되었을 경우 첫 번째 보상 선택)
-    if (!chosenReward) {
-        chosenReward = rewards[0];
-    }
-    
-    // 선택된 보상에 고유 쿠폰 번호 추가
-    return { ...chosenReward, couponCode: generateCouponCode() }; // 쿠폰 코드 추가
-}
-
-function renderRewardInside(r){
-  // 쿠폰 코드를 포함하여 렌더링하도록 수정
-  rewardEl.innerHTML = `
-    <span class="icon">${r.icon}</span>
-    <div class="label">${r.name}</div>
-    <div class="coupon-code">${r.couponCode}</div> `;
-  rewardEl.setAttribute("aria-hidden","false");
-}
-
-/* confetti burst helper */
-function burstConfetti(){
-  if (typeof confetti === "function") {
-    confetti({ particleCount: 40, spread: 60, origin: { x: 0.5, y: 0.4 }});
-    setTimeout(()=> confetti({ particleCount: 30, spread: 80, origin: { x: 0.3, y: 0.2 }}), 160);
-    setTimeout(()=> confetti({ particleCount: 30, spread: 80, origin: { x: 0.7, y: 0.2 }}), 260);
-  }
-}
-
-/* 전체 연출 시퀀스 */
-async function playSequence(){
-  if(animating) return;
-  animating = true;
-  msgEl.textContent = "";
-  usageArea.textContent = "";
-  rewardEl.classList.remove("popUp");
-  giftWrap.classList.remove("open");
-
-  giftWrap.classList.add("pop");
-  await delay(TIMINGS.pop);
-  giftWrap.classList.remove("pop");
-
-  giftWrap.classList.add("shake");
-  await delay(TIMINGS.shake);
-  giftWrap.classList.remove("shake");
-
-  giftWrap.classList.add("open");
-  await delay(TIMINGS.openDelay);
-
-  if(pendingReward){
-    renderRewardInside(pendingReward);
-    usageArea.textContent = pendingReward.usage;
-    setTimeout(()=> {
-      rewardEl.classList.add("popUp");
-      burstConfetti();
-    }, 60);
-  }
-  
-  setTimeout(()=> { animating = false; }, TIMINGS.rewardPop + 80);
-}
-
-/* 보상 받기 클릭 */
-rewardBtn.addEventListener("click", async () => {
-  if(animating) return;
-
-  const today = new Date().toISOString().split('T')[0];
-  const lastParticipation = localStorage.getItem("lucky_box_last_date");
-
-  if (lastParticipation === today) {
-    msgEl.textContent = "오늘은 이미 참여했습니다. 내일 다시 시도해주세요!";
-    return;
-  }
-  
-  pendingReward = pickReward();
-  await playSequence();
-  
- // msgEl.textContent = `🎉 ${pendingReward.name} 당첨! 쿠폰번호: ${pendingReward.couponCode}`; // 메시지에 쿠폰번호 포함
-  msgEl.textContent = `🎉 ${pendingReward.name} 당첨!`; // 메시지에 쿠폰번호 포함
-  localStorage.setItem("lucky_box_last_date", today);
-});
-
-/* 로그인 처리(카카오 SDK 있으면 실제 로그인, 없으면 대체) - 전체 주석 처리
-loginBtn.addEventListener("click", () => {
-  // ... (생략된 기존 로그인 관련 주석 처리 코드) ...
-});
-
-function handlePostLogin(uid, nickname){
-  // ... (생략된 기존 로그인 관련 주석 처리 코드) ...
-}
-*/
-
+let busy = false;
+const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+function getKoreaDateKey(){ return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()); }
+function getTodayResult(){ try { const data=JSON.parse(localStorage.getItem(STORE_KEY)); return data?.date===getKoreaDateKey()?data:null; } catch { return null; } }
+function hasDrawnToday(){ return Boolean(getTodayResult()); }
+function saveTodayResult(prize,code){ localStorage.setItem(STORE_KEY,JSON.stringify({date:getKoreaDateKey(),prizeId:prize.id,code})); }
+function generateCouponCode(){ const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; return `JRM-${Array.from({length:6},()=>chars[Math.floor(Math.random()*chars.length)]).join('')}`; }
+function drawPrize(){ let roll=Math.random()*prizes.reduce((sum,prize)=>sum+prize.weight,0); return prizes.find(prize=>(roll-=prize.weight)<0)||prizes[0]; }
+function getPrizeCardAsset(prize){ return prize.asset; }
+function findPrize(id){ return prizes.find(prize=>prize.id===id); }
+function showToast(message){ toast.textContent=message; toast.classList.add('is-visible'); setTimeout(()=>toast.classList.remove('is-visible'),1800); }
+function screen(content,className=''){ app.className=`app-shell ${className}`; app.innerHTML=content; window.scrollTo(0,0); }
+function brand(){ return '<div class="brand"><span class="brand-paw">🐾</span><strong>자유로멍</strong><small>반려견과 함께하는 행복한 시간</small></div>'; }
+function initApp(){ hasDrawnToday()?showDone():showHome(); }
+function showHome(){ screen(`<section class="screen home-screen">${brand()}<div class="home-copy"><h1>오늘의 럭키팩</h1><p>하루에 한 번,<br>어떤 선물이 기다리고 있을까요?</p></div><div class="pack-crop home-pack" aria-label="자유로멍 럭키팩"></div><button class="button button-primary" id="openPack">🐾 카드팩 열기</button><p class="hint">하루 1회 참여할 수 있어요</p></section>`); document.querySelector('#openPack').addEventListener('click',showVerification); }
+function showVerification(){ screen(`<section class="screen verify-screen"><header class="nav"><button id="goHome" aria-label="뒤로 가기">←</button><strong>🐾 자유로멍</strong><span></span></header><div class="verify-content"><h1>지금, 럭키팩을<br>열어볼까요?</h1><p>하루 1회 참여를 위해<br>휴대폰 번호를 입력해주세요.</p><label>휴대폰 번호<input id="phone" inputmode="numeric" maxlength="13" placeholder="010 - 1234 - 5678"></label><button class="button button-dark" id="sendCode">인증번호 보내기</button><div id="codeArea" hidden><label>인증번호<input id="code" inputmode="numeric" maxlength="6" placeholder="인증번호 6자리 입력"></label><button class="button button-primary" id="startOpening">확인하고 시작하기</button></div><small class="privacy">🔒 입력하신 번호는 이벤트 참여 확인 용도로만 사용됩니다.</small></div></section>`); document.querySelector('#goHome').onclick=showHome; const phone=document.querySelector('#phone'); phone.addEventListener('input',()=>{const digits=phone.value.replace(/\D/g,'').slice(0,11);phone.value=digits.replace(/(\d{3})(\d{0,4})(\d{0,4})/,(_,a,b,c)=>[a,b,c].filter(Boolean).join(' - '));}); document.querySelector('#sendCode').onclick=()=>{if(phone.value.replace(/\D/g,'').length<10)return showToast('휴대폰 번호를 확인해주세요.');document.querySelector('#codeArea').hidden=false;document.querySelector('#code').focus();showToast('임시 인증번호를 보냈어요.');};document.querySelector('#startOpening').onclick=()=>{if(!document.querySelector('#codeArea').hidden&&document.querySelector('#code').value.length>=1)startPackOpening();else showToast('인증번호를 입력해주세요.');}; }
+async function startPackOpening(){if(busy)return;busy=true;const prize=drawPrize();const code=prize.win===false?null:generateCouponCode();playPackShake();await wait(700);playPackTear();await wait(700);playPackLightBurst();await wait(550);playCardRise(prize);await wait(700);playCardFlip(prize);await wait(1450);saveTodayResult(prize,code);busy=false;renderPrizeResult(prize,code);}
+function openingShell(copy,extra=''){screen(`<section class="screen opening-screen ${extra}"><div class="opening-copy">${copy}</div><div class="pack-crop opening-pack"></div><div class="burst"></div><div class="sparkles" aria-hidden="true">✦ ✧ ✦ ✧ ✦</div><div id="revealCard" class="reveal-card"><div class="card-face card-back"><span>🐾</span><small>JARUROMUNG</small></div></div></section>`);}
+function playPackShake(){openingShell('<strong>두근두근...</strong><span>오늘의 럭키팩을<br>열고 있어요!</span>','shake-step');}
+function playPackTear(){const opening=document.querySelector('.opening-screen');opening.classList.remove('shake-step');opening.classList.add('tear-step');document.querySelector('.opening-copy').innerHTML='<strong>조금만 기다려주세요!</strong><span>행운을 꺼내고 있어요</span>';}
+function playPackLightBurst(){const opening=document.querySelector('.opening-screen');opening.classList.remove('tear-step');opening.classList.add('light-step');document.querySelector('.opening-copy').innerHTML='<strong>오늘의 선물이 도착했어요!</strong>';}
+function playCardRise(prize){document.querySelector('.opening-screen').classList.add('rise-step');const reveal=document.querySelector('#revealCard');reveal.innerHTML='<div class="card-face card-back"><span>🐾</span><small>JARUROMUNG<br>LUCKY CARD</small></div>';reveal.dataset.prize=prize.id;}
+function playCardFlip(prize){const reveal=document.querySelector('#revealCard');reveal.innerHTML=`<div class="card-inner"><div class="card-face card-back"><span>🐾</span><small>JARUROMUNG<br>LUCKY CARD</small></div><div class="card-face card-front"><img src="${getPrizeCardAsset(prize)}" alt="${prize.name} 결과 카드"></div></div>`;requestAnimationFrame(()=>reveal.classList.add('flipped'));}
+function renderPrizeCardReveal(prize){return `<img class="result-art" src="${getPrizeCardAsset(prize)}" alt="${prize.name} 당첨 카드">`;}
+function renderPrizeResult(prize,code){const win=prize.win!==false;const coupon=win?`<div class="coupon"><span>쿠폰 번호</span><strong id="couponCode">${code}</strong><button id="copyCoupon">복사</button></div><button class="button button-primary" id="saveCoupon">▣ 쿠폰 저장하기</button>`:'';screen(`<section class="screen result-screen ${prize.rare?'rare-result':''} ${win?'winner':'not-winner'}"><div class="result-head"><p>${prize.title}</p><h1>${prize.subtitle}</h1></div><div class="result-art-wrap">${renderPrizeCardReveal(prize)}</div><article class="result-card"><h2>${prize.name}</h2><p>${prize.detail.replace(/\n/g,'<br>')}</p>${coupon}</article><button class="button button-plain" id="confirm">확인</button></section>`);document.querySelector('#confirm').onclick=showDone;if(win){document.querySelector('#copyCoupon').onclick=()=>copyCouponCode(code);document.querySelector('#saveCoupon').onclick=()=>{copyCouponCode(code);showToast('쿠폰번호를 복사해 저장했어요!');};}}
+async function copyCouponCode(code){try{await navigator.clipboard.writeText(code);}catch{const input=document.createElement('input');input.value=code;document.body.append(input);input.select();document.execCommand('copy');input.remove();}showToast('쿠폰번호를 복사했어요!');}
+function showDone(){const stored=getTodayResult();const prize=stored&&findPrize(stored.prizeId);screen(`<section class="screen done-screen">${brand()}<div class="done-copy"><h1>오늘의 럭키팩을<br>이미 열어보셨어요! 🐾</h1><p>내일 새로운 선물과 함께<br>다시 만나요.</p></div>${prize?`<div class="today-gift"><span>오늘 받은 선물</span><strong>${prize.name}</strong>${prize.win!==false?`<small>${stored.code}</small>`:''}</div>`:''}<div class="dogs">🐶 🐾 🐶</div></section>`);}
+initApp();

@@ -1,50 +1,15 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>강아지 럭키박스 이벤트</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#fff7ed">
+  <title>자유로멍 | 오늘의 럭키팩</title>
   <link rel="stylesheet" href="style.css">
-  <!-- confetti 라이브러리 (canvas-confetti) -->
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
-  <!-- 카카오 SDK는 실제 사용 시 init 포함하여 활성화하세요 -->
-  <script src="https://developers.kakao.com/sdk/js/kakao.min.js"></script>
 </head>
 <body>
-  <main class="wrap">
-    <header>
-      <h1>🎁 강아지 럭키박스 이벤트</h1>
-    </header>
-
-    <section class="stage">
-      <div class="gift-wrap" id="giftWrap">
-        <!-- 닫힌 상자 이미지 (초기 표시) -->
-        <img id="giftClosed" class="gift-img gift-closed" src="image/box.png" alt="선물상자(닫힘)">
-        <!-- 열린 상자 이미지(초기엔 투명) -->
-        <img id="giftOpen" class="gift-img gift-open" src="image/lid3.png" alt="선물상자(열림)">
-        <!-- 보상 내부에서 튀어나오는 요소 (아이콘+라벨) -->
-        <div id="reward" class="reward" aria-hidden="true"></div>
-      </div>
-    </section>
-
-    <!-- 사용법 안내(항상 상자 바로 아래 고정) -->
-    <div id="usageArea" class="usage-area" aria-live="polite"></div>
-
-    <!-- 버튼 -->
-    <div class="controls">
-      <button id="rewardBtn" class="btn-primary">보상 받기</button>
-      <!-- 카카오톡 로그인 주석
-    <button id="loginBtn" class="btn-kakao" style="display:none;">카카오로 로그인 (보상 적립)</button>
-     -->
-  
-    </div>
-
-    <div id="msg" class="msg" aria-live="polite"></div>
- <!---- 포인트 표시
-  <div id="points" class="points">포인트: 0</div> --->
-  
-</main>
-
+  <main id="app" class="app-shell" aria-live="polite"></main>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="script.js"></script>
 </body>
 </html>
