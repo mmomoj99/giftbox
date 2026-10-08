@@ -8,9 +8,14 @@ const HalloweenAudio = (() => {
     witch: 'assets/audio/dragon-studio-witch-laugh-401713.mp3',
   };
   const assetBuffers = {}, activeAssets = new Map();
+  const localFile = window.location.protocol === 'file:';
+  const mediaTimers = new Map();
+  const localAudio = localFile ? Object.fromEntries(Object.entries(audioAssets).map(([name,path]) => {
+    const audio = new Audio(path);audio.preload='auto';audio.load();return [name,audio];
+  })) : {};
   let assetDecode;
   const assetBytes = Object.fromEntries(Object.entries(audioAssets).map(([name, path]) => [name,
-    fetch(path).then(response => { if (!response.ok) throw new Error(`Audio HTTP ${response.status}: ${path}`); return response.arrayBuffer(); })
+    (localFile ? Promise.resolve(null) : fetch(path).then(response => { if (!response.ok) throw new Error(`Audio HTTP ${response.status}: ${path}`); return response.arrayBuffer(); }))
       .catch(error => { console.warn('Halloween audio asset unavailable:', error); return null; })
   ]));
   function prepareAssetAudio() {
@@ -23,11 +28,23 @@ const HalloweenAudio = (() => {
     return assetDecode;
   }
   function stopAssetAudio() {
+    for(const audio of Object.values(localAudio)){audio.pause();audio.currentTime=0;}
+    for(const timer of mediaTimers.values())clearTimeout(timer);
+    mediaTimers.clear();
     for (const source of activeAssets.values()) { try { source.stop(); } catch {} }
     activeAssets.clear();
   }
   function playAsset(name, volume, maximumDuration) {
     if (!allowed()) return;
+    if(localFile){
+      const audio=localAudio[name];if(!audio)return;
+      clearTimeout(mediaTimers.get(name));audio.pause();audio.currentTime=0;audio.muted=false;audio.volume=volume;
+      audio.play().then(()=>{
+        if(!enabled||document.hidden){audio.pause();return;}
+        mediaTimers.set(name,setTimeout(()=>{audio.pause();audio.currentTime=0;mediaTimers.delete(name);},maximumDuration*1000));
+      }).catch(error=>console.warn('Local Halloween audio playback failed:',name,error));
+      return;
+    }
     const buffer = assetBuffers[name];
     if (!buffer) { console.warn('Halloween audio not ready:', name); return; }
     try {
