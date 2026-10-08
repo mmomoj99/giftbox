@@ -33,9 +33,26 @@ const HalloweenAudio = (() => {
     source.start();
   }
   function startAmbience() {
-    if (!allowed() || ambience) return;
-    const oscillator = context.createOscillator(), gain = context.createGain();
-    oscillator.frequency.value = 110; gain.gain.value = .035;
+    if (!allowed() || ambience || !document.querySelector('.home')) return;
+    // Original 16-second minor-key music-box loop with soft wind and a warm pad.
+    const duration = 16, rate = context.sampleRate;
+    const buffer = context.createBuffer(1, rate * duration, rate);
+    const samples = buffer.getChannelData(0);
+    const melody = [69, 72, 76, 75, 76, 72, 71, 64, 69, 72, 77, 76, 72, 71, 68, 71];
+    let wind = 0;
+    for (let i = 0; i < samples.length; i++) {
+      const t = i / rate, beat = Math.floor(t), age = t - beat;
+      const f = 440 * Math.pow(2, (melody[beat] - 69) / 12);
+      const envelope = Math.min(age / .018, 1) * Math.exp(-age * 5);
+      const bell = (Math.sin(2 * Math.PI * f * age) + .22 * Math.sin(2 * Math.PI * f * 2 * age)) * envelope * .15;
+      const pad = (Math.sin(2 * Math.PI * 110 * t) + .4 * Math.sin(2 * Math.PI * 165 * t)) * .023;
+      wind = wind * .995 + (Math.random() * 2 - 1) * .005;
+      samples[i] = bell + pad + wind * .2;
+    }
+    const oscillator = context.createBufferSource(), gain = context.createGain();
+    oscillator.buffer = buffer; oscillator.loop = true;
+    gain.gain.setValueAtTime(0, context.currentTime);
+    gain.gain.linearRampToValueAtTime(1, context.currentTime + .6);
     oscillator.connect(gain).connect(master); oscillator.start();
     ambience = { oscillator, gain };
   }
@@ -83,10 +100,15 @@ const HalloweenAudio = (() => {
     if (document.hidden) { stopAmbience(); context?.suspend().catch(() => {}); }
     else if (enabled && context) unlock();
   });
-  return { play, toggle, refreshButton };
+  function syncScreen() {
+    if (document.querySelector('.home')) startAmbience();
+    else stopAmbience();
+  }
+  return { play, toggle, refreshButton, syncScreen };
 })();
 
 function decorateHalloweenScreen() {
+  HalloweenAudio.syncScreen();
   const screen = document.querySelector('.home, .opening');
   if (!screen) return;
   const decorations = document.createElement('div');
