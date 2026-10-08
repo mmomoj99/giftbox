@@ -133,8 +133,8 @@ const HalloweenAudio = (() => {
   function play(name, prize) {
     if (name === 'shake') noise(.35, .2, 1800, 1100);
     if (name === 'tear') noise(.38, .35, 4200, 650);
-    if (name === 'poof') playAsset('poof', .65, 1);
-    if (name === 'witch') playAsset('witch', .60, 1.5);
+    if (name === 'poof') playAsset('poof', .95, .65);
+    if (name === 'witch') playAsset('witch', .30, 1.2);
     if (name === 'light') { noise(.5, .22, 250, 2600); tone(220, .5, .15, 0, 880); }
     if (name === 'rise') [660, 880, 1100].forEach((f, i) => tone(f, .45, .13, i * .13));
     if (name === 'flip') noise(.2, .25, 1600, 500);
@@ -202,7 +202,7 @@ function spawnPackSmoke(stage) {
   const batShape='<svg viewBox="0 0 60 30" aria-hidden="true"><path fill="currentColor" d="M30 13 26 7 24 13Q14 3 1 2L6 19 14 15 21 24 27 21 30 28 33 21 39 24 46 15 54 19 59 2Q46 3 36 13L34 7Z"/></svg>';
   for(let i=0;i<(reduced?2:7);i++){
     const bat=document.createElement('i');bat.className='opening-bat';bat.innerHTML=batShape;
-    bat.style.width=`${reduced?36:44+(i%3)*9}px`;
+    bat.style.width=`${reduced?42:64+(i%3)*12}px`;
     bat.style.setProperty('--x',`${(i-3)*(reduced?12:55)}px`);
     bat.style.setProperty('--y',`${-(reduced?30:95+(i%4)*40)}px`);bat.style.animationDelay=`${80+i*45}ms`;layer.append(bat);
   }
