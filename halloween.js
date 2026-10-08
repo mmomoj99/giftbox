@@ -166,10 +166,12 @@ function decorateHalloweenScreen() {
 function spawnPackSmoke(stage) {
   const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const layer=document.createElement('div');layer.className='pack-smoke';layer.setAttribute('aria-hidden','true');
-  for(let i=0;i<(reduced?4:10);i++){
+  for(let i=0;i<(reduced?4:14);i++){
     const puff=document.createElement('i');puff.className='smoke-puff'+(i%4===0?' smoke-front':'');
-    puff.style.setProperty('--x',`${(i-4.5)*(reduced?9:24)}px`);
-    puff.style.setProperty('--y',`${-(reduced?35:70+(i%4)*27)}px`);
+    puff.style.width=`${reduced?90:i%4===0?80:110+(i%3)*18}px`;
+    puff.style.height=`${reduced?76:i%4===0?70:90+(i%4)*12}px`;
+    puff.style.setProperty('--x',`${(i-6.5)*(reduced?7:20)}px`);
+    puff.style.setProperty('--y',`${-(reduced?35:85+(i%4)*30)}px`);
     puff.style.setProperty('--turn',`${i%2?22:-19}deg`);
     puff.style.setProperty('--shade',i%3===0?'#f47b20':i%3===1?'#5b2a86':'#32133f');
     puff.style.animationDelay=`${(i%3)*35}ms`;layer.append(puff);
