@@ -72,6 +72,7 @@ const HalloweenAudio = (() => {
   function play(name, prize) {
     if (name === 'shake') noise(.35, .2, 1800, 1100);
     if (name === 'tear') noise(.38, .35, 4200, 650);
+    if (name === 'poof') { noise(.22, .3, 480, 140); tone(130, .16, .2, 0, 65); }
     if (name === 'light') { noise(.5, .22, 250, 2600); tone(220, .5, .15, 0, 880); }
     if (name === 'rise') [660, 880, 1100].forEach((f, i) => tone(f, .45, .13, i * .13));
     if (name === 'flip') noise(.2, .25, 1600, 500);
@@ -122,4 +123,23 @@ function decorateHalloweenScreen() {
   screen.prepend(decorations);
   const button = document.createElement('button'); button.className = 'sound-toggle'; button.type = 'button';
   button.onclick = HalloweenAudio.toggle; screen.append(button); HalloweenAudio.refreshButton();
+}
+function spawnPackSmoke(stage) {
+  const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const layer=document.createElement('div');layer.className='pack-smoke';layer.setAttribute('aria-hidden','true');
+  for(let i=0;i<(reduced?4:10);i++){
+    const puff=document.createElement('i');puff.className='smoke-puff'+(i%4===0?' smoke-front':'');
+    puff.style.setProperty('--x',`${(i-4.5)*(reduced?9:24)}px`);
+    puff.style.setProperty('--y',`${-(reduced?35:70+(i%4)*27)}px`);
+    puff.style.setProperty('--turn',`${i%2?22:-19}deg`);
+    puff.style.setProperty('--shade',i%3===0?'#f47b20':i%3===1?'#5b2a86':'#32133f');
+    puff.style.animationDelay=`${(i%3)*35}ms`;layer.append(puff);
+  }
+  const batShape='<svg viewBox="0 0 60 30" aria-hidden="true"><path fill="currentColor" d="M30 13 26 7 24 13Q14 3 1 2L6 19 14 15 21 24 27 21 30 28 33 21 39 24 46 15 54 19 59 2Q46 3 36 13L34 7Z"/></svg>';
+  for(let i=0;i<(reduced?1:3);i++){
+    const bat=document.createElement('i');bat.className='opening-bat';bat.innerHTML=batShape;
+    bat.style.setProperty('--x',`${(i-1)*(reduced?25:145)}px`);
+    bat.style.setProperty('--y',`${-(reduced?30:130+(i%2)*65)}px`);bat.style.animationDelay=`${120+i*65}ms`;layer.append(bat);
+  }
+  stage.append(layer);setTimeout(()=>layer.remove(),1400);
 }
