@@ -14,11 +14,13 @@ const HalloweenAudio = (() => {
       .catch(error => { console.warn('Halloween audio asset unavailable:', error); return null; })
   ]));
   function prepareAssetAudio() {
-    if (!context || assetDecode) return;
+    if (!context) return Promise.resolve();
+    if (assetDecode) return assetDecode;
     assetDecode = Promise.all(Object.entries(assetBytes).map(async ([name, bytes]) => {
       try { const data = await bytes; if (data) assetBuffers[name] = await context.decodeAudioData(data); }
       catch (error) { console.warn('Halloween audio decode failed:', name, error); }
     }));
+    return assetDecode;
   }
   function stopAssetAudio() {
     for (const source of activeAssets.values()) { try { source.stop(); } catch {} }
@@ -32,13 +34,17 @@ const HalloweenAudio = (() => {
       activeAssets.get(name)?.stop();
       const source = context.createBufferSource(), gain = context.createGain();
       source.buffer = buffer;
-      const duration = Math.min(buffer.duration, maximumDuration);
+      // Skip a quiet lead-in so the audible burst/laugh starts at the VFX cue.
+      const samples=buffer.getChannelData(0),windowSize=Math.max(1,Math.floor(buffer.sampleRate*.01));
+      let firstSound=0;
+      for(let i=0;i<samples.length;i+=windowSize){let power=0;const count=Math.min(windowSize,samples.length-i);for(let j=0;j<count;j++)power+=samples[i+j]*samples[i+j];if(Math.sqrt(power/count)>.008){firstSound=Math.max(0,i/buffer.sampleRate-.02);break}}
+      const duration = Math.min(buffer.duration-firstSound, maximumDuration);
       gain.gain.setValueAtTime(volume, context.currentTime);
       gain.gain.setValueAtTime(volume, context.currentTime + Math.max(0, duration - .08));
       gain.gain.linearRampToValueAtTime(0, context.currentTime + duration);
       source.connect(gain).connect(context.destination);activeAssets.set(name, source);
       source.onended = () => { if (activeAssets.get(name) === source) activeAssets.delete(name); source.disconnect(); gain.disconnect(); };
-      source.start(0, 0, duration);
+      source.start(0, firstSound, duration);
     } catch (error) { console.warn('Halloween audio playback failed:', name, error); }
   }
   function tone(frequency, duration, volume, offset = 0, endFrequency = frequency) {
@@ -104,14 +110,14 @@ const HalloweenAudio = (() => {
     if (!Audio) return;
     try {
       if (!context) { context = new Audio(); master = context.createGain(); master.gain.value = .12; master.connect(context.destination); }
-      prepareAssetAudio();await context.resume(); startAmbience();
+      const ready=prepareAssetAudio();await context.resume(); startAmbience();await ready;
     } catch (error) { console.warn('Halloween audio unavailable:', error); }
   }
   function play(name, prize) {
     if (name === 'shake') noise(.35, .2, 1800, 1100);
     if (name === 'tear') noise(.38, .35, 4200, 650);
-    if (name === 'poof') playAsset('poof', .30, 1);
-    if (name === 'witch') playAsset('witch', .25, 1.3);
+    if (name === 'poof') playAsset('poof', .65, 1);
+    if (name === 'witch') playAsset('witch', .60, 1.5);
     if (name === 'light') { noise(.5, .22, 250, 2600); tone(220, .5, .15, 0, 880); }
     if (name === 'rise') [660, 880, 1100].forEach((f, i) => tone(f, .45, .13, i * .13));
     if (name === 'flip') noise(.2, .25, 1600, 500);
@@ -149,7 +155,7 @@ const HalloweenAudio = (() => {
       }
     } else stopAmbience();
   }
-  return { play, toggle, refreshButton, syncScreen };
+  return { play, toggle, refreshButton, syncScreen, ready: unlock };
 })();
 
 function decorateHalloweenScreen() {
