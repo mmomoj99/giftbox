@@ -52,7 +52,7 @@ const HalloweenAudio = (() => {
     const oscillator = context.createBufferSource(), gain = context.createGain();
     oscillator.buffer = buffer; oscillator.loop = true;
     gain.gain.setValueAtTime(0, context.currentTime);
-    gain.gain.linearRampToValueAtTime(1, context.currentTime + .6);
+    gain.gain.linearRampToValueAtTime(2.5, context.currentTime + .6);
     oscillator.connect(gain).connect(master); oscillator.start();
     ambience = { oscillator, gain };
   }
