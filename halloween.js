@@ -33,7 +33,7 @@ const HalloweenAudio = (() => {
     source.start();
   }
   function startAmbience() {
-    if (!allowed() || ambience || !document.querySelector('.home')) return;
+    if (!allowed() || ambience || !document.querySelector('.home, .opening')) return;
     // Original 16-second minor-key music-box loop with soft wind and a warm pad.
     const duration = 16, rate = context.sampleRate;
     const buffer = context.createBuffer(1, rate * duration, rate);
@@ -52,7 +52,7 @@ const HalloweenAudio = (() => {
     const oscillator = context.createBufferSource(), gain = context.createGain();
     oscillator.buffer = buffer; oscillator.loop = true;
     gain.gain.setValueAtTime(0, context.currentTime);
-    gain.gain.linearRampToValueAtTime(2.5, context.currentTime + .6);
+    gain.gain.linearRampToValueAtTime(document.querySelector('.opening') ? .7 : 2.5, context.currentTime + .6);
     oscillator.connect(gain).connect(master); oscillator.start();
     ambience = { oscillator, gain };
   }
@@ -101,8 +101,13 @@ const HalloweenAudio = (() => {
     else if (enabled && context) unlock();
   });
   function syncScreen() {
-    if (document.querySelector('.home')) startAmbience();
-    else stopAmbience();
+    if (document.querySelector('.home, .opening')) {
+      startAmbience();
+      if (ambience) {
+        ambience.gain.gain.cancelScheduledValues(context.currentTime);
+        ambience.gain.gain.setTargetAtTime(document.querySelector('.opening') ? .7 : 2.5, context.currentTime, .15);
+      }
+    } else stopAmbience();
   }
   return { play, toggle, refreshButton, syncScreen };
 })();
