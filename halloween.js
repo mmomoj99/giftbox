@@ -136,10 +136,11 @@ function spawnPackSmoke(stage) {
     puff.style.animationDelay=`${(i%3)*35}ms`;layer.append(puff);
   }
   const batShape='<svg viewBox="0 0 60 30" aria-hidden="true"><path fill="currentColor" d="M30 13 26 7 24 13Q14 3 1 2L6 19 14 15 21 24 27 21 30 28 33 21 39 24 46 15 54 19 59 2Q46 3 36 13L34 7Z"/></svg>';
-  for(let i=0;i<(reduced?1:3);i++){
+  for(let i=0;i<(reduced?2:7);i++){
     const bat=document.createElement('i');bat.className='opening-bat';bat.innerHTML=batShape;
-    bat.style.setProperty('--x',`${(i-1)*(reduced?25:145)}px`);
-    bat.style.setProperty('--y',`${-(reduced?30:130+(i%2)*65)}px`);bat.style.animationDelay=`${120+i*65}ms`;layer.append(bat);
+    bat.style.width=`${reduced?36:44+(i%3)*9}px`;
+    bat.style.setProperty('--x',`${(i-3)*(reduced?12:55)}px`);
+    bat.style.setProperty('--y',`${-(reduced?30:95+(i%4)*40)}px`);bat.style.animationDelay=`${80+i*45}ms`;layer.append(bat);
   }
   stage.append(layer);setTimeout(()=>layer.remove(),1400);
 }
