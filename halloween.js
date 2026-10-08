@@ -3,6 +3,44 @@ const HalloweenAudio = (() => {
   let context, master, ambience, enabled = true;
   try { enabled = localStorage.getItem('soundEnabled') !== 'false'; } catch {}
   const allowed = () => enabled && context?.state === 'running' && !document.hidden;
+  const audioAssets = {
+    poof: 'assets/audio/freesound_community-puffofsmoke-47176.mp3',
+    witch: 'assets/audio/dragon-studio-witch-laugh-401713.mp3',
+  };
+  const assetBuffers = {}, activeAssets = new Map();
+  let assetDecode;
+  const assetBytes = Object.fromEntries(Object.entries(audioAssets).map(([name, path]) => [name,
+    fetch(path).then(response => { if (!response.ok) throw new Error(`Audio HTTP ${response.status}: ${path}`); return response.arrayBuffer(); })
+      .catch(error => { console.warn('Halloween audio asset unavailable:', error); return null; })
+  ]));
+  function prepareAssetAudio() {
+    if (!context || assetDecode) return;
+    assetDecode = Promise.all(Object.entries(assetBytes).map(async ([name, bytes]) => {
+      try { const data = await bytes; if (data) assetBuffers[name] = await context.decodeAudioData(data); }
+      catch (error) { console.warn('Halloween audio decode failed:', name, error); }
+    }));
+  }
+  function stopAssetAudio() {
+    for (const source of activeAssets.values()) { try { source.stop(); } catch {} }
+    activeAssets.clear();
+  }
+  function playAsset(name, volume, maximumDuration) {
+    if (!allowed()) return;
+    const buffer = assetBuffers[name];
+    if (!buffer) { console.warn('Halloween audio not ready:', name); return; }
+    try {
+      activeAssets.get(name)?.stop();
+      const source = context.createBufferSource(), gain = context.createGain();
+      source.buffer = buffer;
+      const duration = Math.min(buffer.duration, maximumDuration);
+      gain.gain.setValueAtTime(volume, context.currentTime);
+      gain.gain.setValueAtTime(volume, context.currentTime + Math.max(0, duration - .08));
+      gain.gain.linearRampToValueAtTime(0, context.currentTime + duration);
+      source.connect(gain).connect(context.destination);activeAssets.set(name, source);
+      source.onended = () => { if (activeAssets.get(name) === source) activeAssets.delete(name); source.disconnect(); gain.disconnect(); };
+      source.start(0, 0, duration);
+    } catch (error) { console.warn('Halloween audio playback failed:', name, error); }
+  }
   function tone(frequency, duration, volume, offset = 0, endFrequency = frequency) {
     if (!allowed()) return;
     const at = context.currentTime + offset;
@@ -66,13 +104,14 @@ const HalloweenAudio = (() => {
     if (!Audio) return;
     try {
       if (!context) { context = new Audio(); master = context.createGain(); master.gain.value = .12; master.connect(context.destination); }
-      await context.resume(); startAmbience();
+      prepareAssetAudio();await context.resume(); startAmbience();
     } catch (error) { console.warn('Halloween audio unavailable:', error); }
   }
   function play(name, prize) {
     if (name === 'shake') noise(.35, .2, 1800, 1100);
     if (name === 'tear') noise(.38, .35, 4200, 650);
-    if (name === 'poof') { noise(.22, .3, 480, 140); tone(130, .16, .2, 0, 65); }
+    if (name === 'poof') playAsset('poof', .30, 1);
+    if (name === 'witch') playAsset('witch', .25, 1.3);
     if (name === 'light') { noise(.5, .22, 250, 2600); tone(220, .5, .15, 0, 880); }
     if (name === 'rise') [660, 880, 1100].forEach((f, i) => tone(f, .45, .13, i * .13));
     if (name === 'flip') noise(.2, .25, 1600, 500);
@@ -85,7 +124,7 @@ const HalloweenAudio = (() => {
     enabled = !enabled;
     try { localStorage.setItem('soundEnabled', String(enabled)); } catch {}
     if (master) master.gain.value = enabled ? .12 : 0;
-    enabled ? unlock() : stopAmbience();
+    if (enabled) unlock(); else { stopAmbience(); stopAssetAudio(); }
     refreshButton();
   }
   function refreshButton() {
@@ -98,7 +137,7 @@ const HalloweenAudio = (() => {
   document.addEventListener('pointerdown', event => { if (!event.target.closest('.sound-toggle')) unlock(); });
   document.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') unlock(); });
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) { stopAmbience(); context?.suspend().catch(() => {}); }
+    if (document.hidden) { stopAmbience(); stopAssetAudio();context?.suspend().catch(() => {}); }
     else if (enabled && context) unlock();
   });
   function syncScreen() {
